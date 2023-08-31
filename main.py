@@ -23,16 +23,16 @@ SECRET_KEYS= {
 }
 
 SMFC_DATA_EXTENSION_CUSTOMER_KEY="58A8681E-615D-408C-B860-77B514BF048C"
-SMFC_DATA_EXTENSION_NAME="NAE_Internal_Communications_DE"
+SMFC_DATA_EXTENSION_NAME="Internal_Communications_DE"
 
-SFMC_API_URL = "https://mc7mvw1rlkn1gvxwkvdk4zfs81h4.rest.marketingcloudapis.com/hub/v1/"
-SFMC_SOAP_API_URL = "https://mc7mvw1rlkn1gvxwkvdk4zfs81h4.soap.marketingcloudapis.com/Service.asmx"
-SFMC_SOAP_WSDL = " https://mc7mvw1rlkn1gvxwkvdk4zfs81h4.soap.marketingcloudapis.com/etframework.wsdl"
-SFMC_API_AUTH_URL = "https://mcf5m6qnqkc44dvvmrzz6jxs74m8.auth.marketingcloudapis.com"
+SFMC_API_URL = "https://<subdomain>.rest.marketingcloudapis.com/hub/v1/"
+SFMC_SOAP_API_URL = "https://<subdomain>.soap.marketingcloudapis.com/Service.asmx"
+SFMC_SOAP_WSDL = " https://<subdomain>.soap.marketingcloudapis.com/etframework.wsdl"
+SFMC_API_AUTH_URL = "https://<subdomain>.auth.marketingcloudapis.com"
 
 
-AD_TENANTS = {"naecentral","naeeuro","naecn","nordanglia","naena"}
-NAE_CENTRAL_TENANT_AD_GROUP_IDS = {'NAE All Office Staff' : 'fc519dc2-f38d-4148-a7d3-1577f158906c'}
+AD_TENANTS = {"tenant1","tenant2","tenant3","tenant4","tenant5"}
+NAE_CENTRAL_TENANT_AD_GROUP_IDS = {'All Office Staff' : 'fc519dc2-f38d-4148-a7d3-1577f158906c'}
 
 
 # To allow local debug, comment out the contents of this function and uncomment the print statement.
@@ -115,26 +115,26 @@ async def get_ad_users():
 
     for tenant in AD_TENANTS:
     
-        if "naecn" == tenant:
+        if "tenant1" == tenant:
             tenant_id = "244cd12d-b25b-456f-b283-cfe4997f00f5"
             extension_attribute_9 = "extension_87ce92dfb96b4ac689f8f53836bffaa6_extensionAttribute9"
-        elif "nordanglia" == tenant:
+        elif "tenant2" == tenant:
             tenant_id = "7fc9707b-9d8f-4f6a-856b-aeb848fef103"
             extension_attribute_9 = "extension_9afa365be4354169950f0b2b9c1d45fb_extensionAttribute9"
-        elif "naeeuro" == tenant:
+        elif "tenant3" == tenant:
             tenant_id = "96d805bc-5a6b-4181-89b6-5eb1ca3ed4da"
             extension_attribute_9 = "extension_69c7512044b44dcebfeb06607100c4b0_extensionAttribute9"
-        elif "naena" == tenant:
+        elif "tenant4" == tenant:
             tenant_id = "0e7c664a-d905-41dd-b08f-6ce92461eb0b"
             extension_attribute_9 = "extension_093768be288447f6a94d1dd4c5eef3c4_extensionAttribute9"
-        elif "naecentral" == tenant:
+        elif "tenant5" == tenant:
             tenant_id = "189ae708-15d7-447e-9278-38b19d37390b"
 
 
 
         # Get Graph API client
         tenant_id = "common"
-        credential = ClientSecretCredential("189ae708-15d7-447e-9278-38b19d37390b",
+        credential = ClientSecretCredential("tenant1_id",
                                         SECRETS['ad_to_sfmc_var_AD_CLIENT_ID'],
                                         SECRETS['ad_to_sfmc_var_AD_CLIENT_SECRET'], additionally_allowed_tenants=[tenant_id])
         scopes = ['https://graph.microsoft.com/.default'] 
@@ -142,8 +142,8 @@ async def get_ad_users():
         auth_provider = AzureIdentityAuthenticationProvider(credential, scopes=scopes)
 
 
-        # Query all tenants except NAE Central
-        if "naecentral" != tenant:
+        # Query all tenants except Tenant1 
+        if "tenant1" != tenant:
             print("\tQuerying '{}' tenant users (extension attribute '9')".format(tenant))
             query_params = UsersRequestBuilder.UsersRequestBuilderGetQueryParameters(select = ["user_principal_name","givenname","surname","office","department","country","street","city","region","company","onPremisesExtensionAttributes"],filter = "UserType eq 'Member'", top = 999)
             request_configuration = UsersRequestBuilder.UsersRequestBuilderGetRequestConfiguration(query_parameters = query_params,)
@@ -173,7 +173,7 @@ async def get_ad_users():
                 print("\tUnable to query AD due to error: {}".format(e))
                 error_encountered=1
 
-        # For NAE Central tenant, query specific groups
+        # For Tenant1, query specific groups
         else:
             print("\tQuerying '{}' tenant users (members of specific groups)".format(tenant))
             for group_name in NAE_CENTRAL_TENANT_AD_GROUP_IDS:
@@ -186,10 +186,6 @@ async def get_ad_users():
                     print("\t\tGetting initial response...")
                     members = await client.groups.by_group_id(NAE_CENTRAL_TENANT_AD_GROUP_IDS[group_name]).members.get(request_configuration = request_configuration)
                     
-                    #next_link = members.odata_next_link
-                    # while "" != next_link:
-
-                    #client.groups.by_group_id(NAE_CENTRAL_TENANT_AD_GROUP_IDS[group_name]).get()
                     __map_group_users(tenant, members)
 
                     # Paginate through the remaining users
@@ -343,7 +339,7 @@ if __name__ == '__main__':
     get_automation_variable()
 
 
-    print("Getting all NAE staff email addresses from AD...\n")
+    print("Getting all staff email addresses from AD...\n")
     # Get Azure Automation Run-As Credentials
     ad_users = asyncio.run(get_ad_users())
 
